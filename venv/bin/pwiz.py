@@ -1,4 +1,4 @@
-#!/Users/francispadua/r1000-ls-strategy/venv/bin/python3
+#!/Users/raunaksood/Documents/r1000-ls-strategy/venv/bin/python3
 
 import datetime
 import os
