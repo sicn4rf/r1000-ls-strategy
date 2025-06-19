@@ -72,8 +72,8 @@ def low_vol(prices: pd.DataFrame,
     
     # Lower σ => stronger signal. so a big stddev of %change will mean 
     # more "wobbly", so make it negative so it pushes this type of stock
-    # to the bottom of the list
-    
+    # to the bottom of the list, go short.
+
     return -prices.pct_change().rolling(window).std()
 
 
@@ -83,4 +83,5 @@ def low_vol(prices: pd.DataFrame,
 def sentiment(nlp_scores: pd.DataFrame) -> pd.DataFrame:
     
     # Higher positive language => stronger long signal.
+    
     return nlp_scores
