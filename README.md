@@ -66,7 +66,7 @@ project/
 
 ### End-to-end ETL
 
-```
+```bash
 python src/validate_prices.py  # Raunak
 python src/compute_forward_returns.py --prices data/processed/prices_cleaned.parquet \
                                       --out data/processed/forward_returns.parquet
