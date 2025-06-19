@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 
-LOG_FILE = Path("logs/data_validation_log.txt")
+LOG_FILE = Path("project/logs/data_validation_log.txt")
 
 def append_validation_entry(raw: pd.DataFrame, clean: pd.DataFrame,
                             dropped: list[str]) -> None:
