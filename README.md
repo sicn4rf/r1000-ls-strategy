@@ -64,6 +64,16 @@ project/
 ├── src/  
 └── README.md
 
+### End-to-end ETL
+
+```
+python src/validate_prices.py  # Raunak
+python src/compute_forward_returns.py --prices data/processed/prices_cleaned.parquet \
+                                      --out data/processed/forward_returns.parquet
+
+
+```
+
 ## Next Steps
 
 - Backtest signal on top 50–100 Russell 1000 names
