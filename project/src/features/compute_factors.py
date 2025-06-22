@@ -14,14 +14,20 @@ import numpy as np
 def momentum(prices: pd.DataFrame,
              lookback: int = 252,
              skip: int = 21) -> pd.DataFrame:
-
     # 12-month total return minus most recent 1-month return.
 
     # subtract one month to prevent recent spikes from affecting mean
 
-    long_win = prices.pct_change(lookback)
-    short_win = prices.pct_change(skip)
-    return long_win - short_win
+    prices = prices.sort_index()
+
+    # Log returns: r_t = log(P_t / P_{t-d})
+    long_return = np.log(prices / prices.shift(lookback))
+    short_return = np.log(prices / prices.shift(skip))
+
+    momentum_signal = long_return - short_return
+
+    # Lag 1 day to avoid lookahead bias
+    return momentum_signal.shift(1)
 
 
 # --------------------------------------------------------------------- #
@@ -44,7 +50,7 @@ def size(mkt_cap: pd.DataFrame) -> pd.DataFrame:
     # smaller firms have shown to have better returns for reasons
     # like they have higher chance to grow faster. long the small firm
     # short the mega firms
-
+    
     return -np.log(mkt_cap)
 
 
@@ -73,8 +79,10 @@ def low_vol(prices: pd.DataFrame,
     # Lower σ => stronger signal. so a big stddev of %change will mean 
     # more "wobbly", so make it negative so it pushes this type of stock
     # to the bottom of the list, go short.
-
-    return -prices.pct_change().rolling(window).std()
+    prices = prices.sort_index()
+    log_returns = np.log(prices / prices.shift(1))
+    rolling_vol = log_returns.rolling(window=window, min_periods=window).std()
+    return -rolling_vol.shift(1)  # lag to prevent leakage
 
 
 # --------------------------------------------------------------------- #
