@@ -7,3 +7,5 @@ limit_per = len(df) * 0.05
 df = df.dropna(thresh=limit_per, axis=1)
 print(df.head())
 
+df.to_csv("r1000_cleaned_close_prices.csv")
+print("Saved to r1000_cleaned_close_prices.csv")
