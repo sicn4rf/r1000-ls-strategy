@@ -33,6 +33,16 @@ df["d2a"] = df["total_debt"] / df["total_assets"]
 df["date"] = pd.Timestamp.today().normalize()
 df = df[["date", "ticker", "market_cap", "book_to_price", "roe", "d2a"]]
 
-# Save to CSV in the current directory (or change path if needed)
-df.to_csv("data/processed/fundamentals_monthly.csv", index=False)
-print("Saved to data/processed/fundamentals_monthly.csv")
+# Convert to wide format
+book_to_price_df = df.pivot(index="date", columns="ticker", values="book_to_price")
+roe_df = df.pivot(index="date", columns="ticker", values="roe")
+d2a_df = df.pivot(index="date", columns="ticker", values="d2a")
+market_cap_df = df.pivot(index="date", columns="ticker", values="market_cap")
+
+# Save each to wide-format CSV
+book_to_price_df.to_csv("data/processed/book_to_price.csv")
+roe_df.to_csv("data/processed/roe.csv")
+d2a_df.to_csv("data/processed/d2a.csv")
+market_cap_df.to_csv("data/processed/market_cap.csv")
+
+print("Saved fundamentals to wide-format CSVs.")
