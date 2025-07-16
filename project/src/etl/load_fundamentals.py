@@ -1,48 +1,58 @@
-import yfinance as yf
 import pandas as pd
+from yahooquery import Ticker
 
-prices = pd.read_csv("data/processed/r1000_cleaned_close_prices.csv", index_col=0)
-TICKERS = list(prices.columns)
+# Define the tickers you want to analyze
+tickers = ['aapl', 'amzn', 'googl', 'jnj', 'meta', 'msft', 'nvda', 'tsla', 'unh']
 
-data = []
+# Initialize the yahooquery Ticker object
+t = Ticker(tickers)
 
-# get fundamental info 
-for ticker in TICKERS:
-    try:
-        info = yf.Ticker(ticker).info
-        row = {
-            "ticker": ticker,
-            "market_cap": info.get("marketCap"),
-            "book_value": info.get("bookValue"),
-            "roe": info.get("returnOnEquity"),
-            "total_debt": info.get("totalDebt"),
-            "total_assets": info.get("totalAssets")
-        }
-        data.append(row)
-    except Exception as e:
-        print(f"Error with {ticker}: {e}")
+# Fetch all available financial data (annual reports only)
+df = t.all_financial_data(frequency='a')  # annual data
+df = df.reset_index()
 
-df = pd.DataFrame(data)
+# Select relevant columns and drop rows with missing values
+quality_df = df[['symbol', 'asOfDate', 'NetIncome', 'StockholdersEquity', 'TotalDebt']].dropna()
 
-# essentially same as book per share / price per share 
-df["book_to_price"] = df["book_value"] / df["market_cap"]
-# debt to assets
-df["d2a"] = df["total_debt"] / df["total_assets"]
-# market cap is there and return on equity is also there
-# add date column
-df["date"] = pd.Timestamp.today().normalize()
-df = df[["date", "ticker", "market_cap", "book_to_price", "roe", "d2a"]]
+# Compute ROE and Leverage
+quality_df['ROE'] = quality_df['NetIncome'] / quality_df['StockholdersEquity']
+quality_df['Leverage'] = quality_df['TotalDebt'] / quality_df['StockholdersEquity']
+quality_df['Quality'] = quality_df['ROE'] - quality_df['Leverage']
 
-# Convert to wide format
-book_to_price_df = df.pivot(index="date", columns="ticker", values="book_to_price")
-roe_df = df.pivot(index="date", columns="ticker", values="roe")
-d2a_df = df.pivot(index="date", columns="ticker", values="d2a")
-market_cap_df = df.pivot(index="date", columns="ticker", values="market_cap")
+# Convert asOfDate to datetime and extract year
+quality_df['asOfDate'] = pd.to_datetime(quality_df['asOfDate'])
+quality_df['year'] = quality_df['asOfDate'].dt.year
 
-# Save each to wide-format CSV
-book_to_price_df.to_csv("data/processed/book_to_price.csv")
-roe_df.to_csv("data/processed/roe.csv")
-d2a_df.to_csv("data/processed/d2a.csv")
-market_cap_df.to_csv("data/processed/market_cap.csv")
+# Pivot to have (year x ticker) table for Quality
+pivot = quality_df.pivot(index='year', columns='symbol', values='Quality')
 
-print("Saved fundamentals to wide-format CSVs.")
+# Build complete year range from 10 years ago to now
+start_year = pd.Timestamp.today().year - 10
+end_year = pd.Timestamp.today().year
+all_years = range(start_year, end_year + 1)
+
+# Reindex and fill missing values
+pivot = pivot.reindex(all_years)
+pivot = pivot.bfill().ffill()  # Backfill earliest years, forward-fill latest
+
+# Create daily date range for the last 10 years
+date_index = pd.date_range(start=f'{start_year}-01-01', end=pd.Timestamp.today(), freq='D')
+
+# Create daily DataFrame and map each date to its corresponding year's Quality values
+daily_quality = pd.DataFrame(index=date_index)
+daily_quality['year'] = daily_quality.index.year
+daily_quality = daily_quality.merge(pivot, how='left', left_on='year', right_index=True)
+daily_quality = daily_quality.drop(columns='year')
+
+# Save result
+daily_quality.to_csv('../../data/processed/quality_factor_daily.csv')
+print("Saved quality_factor_daily.csv with daily values over 10 years.")
+
+
+
+
+
+
+
+
+
