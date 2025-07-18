@@ -22,7 +22,10 @@ def load_price_data():
     price_df.index = pd.to_datetime(price_df.index)
     
     # Drop the unnamed first column (which contains 0,1,2,3...)
-    price_df = price_df.drop(price_df.columns[0], axis=1)
+    if len(price_df.columns) > 0:
+        first_col_name = str(price_df.columns[0])
+        if first_col_name.startswith('Unnamed'):
+            price_df = price_df.drop(columns=[first_col_name])
     
     print(f"Loaded price data: {price_df.shape[0]} dates, {price_df.shape[1]} stocks")
     print(f"Date range: {price_df.index.min()} to {price_df.index.max()}")
@@ -54,9 +57,9 @@ def get_detailed_book_value_data(ticker_symbol):
         # Get balance sheet data (returns annual financial statements)
         balance_sheet = ticker.balance_sheet()
         
-        # Filter for rows that have both tangible book value and shares data
+        # Filter for rows that have both book value and shares data
         valid_data = balance_sheet[
-            balance_sheet['TangibleBookValue'].notna() & 
+            balance_sheet['StockholdersEquity'].notna() & 
             balance_sheet['OrdinarySharesNumber'].notna()
         ].copy()
         
@@ -68,9 +71,9 @@ def get_detailed_book_value_data(ticker_symbol):
         detailed_data = pd.DataFrame({
             'Ticker': ticker_symbol,
             'Fiscal_Year_End': pd.to_datetime(valid_data['asOfDate']),
-            'Tangible_Book_Value': valid_data['TangibleBookValue'],
+            'Total_Book_Value': valid_data['StockholdersEquity'],
             'Shares_Outstanding': valid_data['OrdinarySharesNumber'],
-            'Book_Value_Per_Share': valid_data['TangibleBookValue'] / valid_data['OrdinarySharesNumber']
+            'Book_Value_Per_Share': valid_data['StockholdersEquity'] / valid_data['OrdinarySharesNumber']
         })
         
         # Sort by fiscal year end date
@@ -111,7 +114,7 @@ def create_book_value_verification_csv(tickers):
         
         # Format the data for better readability
         verification_df['Fiscal_Year_End'] = verification_df['Fiscal_Year_End'].dt.strftime('%Y-%m-%d')
-        verification_df['Tangible_Book_Value'] = verification_df['Tangible_Book_Value'].round(0)
+        verification_df['Total_Book_Value'] = verification_df['Total_Book_Value'].round(0)
         verification_df['Shares_Outstanding'] = verification_df['Shares_Outstanding'].round(0)
         verification_df['Book_Value_Per_Share'] = verification_df['Book_Value_Per_Share'].round(4)
         
@@ -122,24 +125,13 @@ def create_book_value_verification_csv(tickers):
         print(f"\nVerification data saved to: {output_path}")
         print(f"Total records: {len(verification_df)} across {len(tickers)} stocks")
         
-        # Show summary statistics
-        print("\nSummary by ticker:")
-        summary = verification_df.groupby('Ticker').agg({
-            'Fiscal_Year_End': ['count', 'min', 'max'],
-            'Book_Value_Per_Share': ['min', 'max', 'mean']
-        }).round(2)
-        print(summary)
-        
-    else:
-        print("No detailed book value data found for any tickers.")
-
 def get_historical_book_values(ticker_symbol):
 
-    # Extract ALL historical tangible book value per share data for a given stock.
+    # Extract ALL historical book value per share data for a given stock.
     
     # Uses yahooquery to get:
     # - balance_sheet(): Gets historical balance sheet data (annual)
-    # - TangibleBookValue: Total tangible book value (excludes intangible assets)
+    # - StockholdersEquity: Total book value (includes all assets)
     # - OrdinarySharesNumber: Total shares outstanding
     
     # Args:
@@ -156,9 +148,9 @@ def get_historical_book_values(ticker_symbol):
         # Get balance sheet data (returns annual financial statements)
         balance_sheet = ticker.balance_sheet()
         
-        # Filter for rows that have both tangible book value and shares data
+        # Filter for rows that have both book value and shares data
         valid_data = balance_sheet[
-            balance_sheet['TangibleBookValue'].notna() & 
+            balance_sheet['StockholdersEquity'].notna() & 
             balance_sheet['OrdinarySharesNumber'].notna()
         ].copy()
         
@@ -168,7 +160,7 @@ def get_historical_book_values(ticker_symbol):
         
         # Calculate book value per share for each year
         valid_data['BookValuePerShare'] = (
-            valid_data['TangibleBookValue'] / valid_data['OrdinarySharesNumber']
+            valid_data['StockholdersEquity'] / valid_data['OrdinarySharesNumber']
         )
         
         # Create a Series with fiscal year-end dates as index
@@ -201,9 +193,6 @@ def get_rolling_book_value_per_share(price_dates, book_value_series):
     if book_value_series is None or len(book_value_series) == 0:
         return pd.Series(np.nan, index=price_dates)
     
-    # Ensure price_dates is a DatetimeIndex
-    if not isinstance(price_dates, pd.DatetimeIndex):
-        price_dates = pd.to_datetime(price_dates)
     
     # For each price date, find the most recent book value available
     rolling_book_values = []
