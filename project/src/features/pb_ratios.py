@@ -4,13 +4,13 @@ import numpy as np
 from pathlib import Path
 
 def load_price_data():
-    """
-    Load the cleaned price data from CSV file.
+
+    # Load the cleaned price data from CSV file.
     
-    Returns:
-        pd.DataFrame: DataFrame containing daily closing prices for all stocks
-                     Expected format: dates as index, stock tickers as columns
-    """
+    # Returns:
+    #     pd.DataFrame: DataFrame containing daily closing prices for all stocks
+    #                  Expected format: dates as index, stock tickers as columns
+
     price_file_path = "/Users/francispadua/r1000-ls-strategy/project/data/processed/r1000_cleaned_close_prices.csv"
     
     # Read the CSV file - the Date column should be used as index
@@ -22,8 +22,7 @@ def load_price_data():
     price_df.index = pd.to_datetime(price_df.index)
     
     # Drop the unnamed first column (which contains 0,1,2,3...)
-    if price_df.columns[0].startswith('Unnamed'):
-        price_df = price_df.drop(price_df.columns[0], axis=1)
+    price_df = price_df.drop(price_df.columns[0], axis=1)
     
     print(f"Loaded price data: {price_df.shape[0]} dates, {price_df.shape[1]} stocks")
     print(f"Date range: {price_df.index.min()} to {price_df.index.max()}")
@@ -32,22 +31,22 @@ def load_price_data():
     return price_df
 
 def get_detailed_book_value_data(ticker_symbol):
-    """
-    Extract detailed tangible book value data for verification purposes.
+
+    # Extract detailed tangible book value data for verification purposes.
     
-    Returns all available annual data including:
-    - Fiscal year end date
-    - Tangible Book Value (total)
-    - Ordinary Shares Number (shares outstanding)
-    - Book Value Per Share (calculated)
+    # Returns all available annual data including:
+    # - Fiscal year end date
+    # - Tangible Book Value (total)
+    # - Ordinary Shares Number (shares outstanding)
+    # - Book Value Per Share (calculated)
     
-    Args:
-        ticker_symbol (str): Stock ticker symbol (e.g., 'AAPL')
+    # Args:
+    #     ticker_symbol (str): Stock ticker symbol (e.g., 'AAPL')
     
-    Returns:
-        pd.DataFrame: DataFrame with detailed financial data by year
-                     Returns None if no data available
-    """
+    # Returns:
+    #     pd.DataFrame: DataFrame with detailed financial data by year
+    #                  Returns None if no data available
+
     try:
         # Create yahooquery Ticker object for the stock
         ticker = yq.Ticker(ticker_symbol)
@@ -85,13 +84,13 @@ def get_detailed_book_value_data(ticker_symbol):
         return None
 
 def create_book_value_verification_csv(tickers):
-    """
-    Create a comprehensive CSV file showing detailed book value calculations
-    for verification purposes.
+
+    # Create a comprehensive CSV file showing detailed book value calculations
+    # for verification purposes.
     
-    Args:
-        tickers (list): List of stock ticker symbols
-    """
+    # Args:
+    #     tickers (list): List of stock ticker symbols
+
     print("\nCreating detailed book value verification CSV...")
     
     all_detailed_data = []
@@ -117,7 +116,7 @@ def create_book_value_verification_csv(tickers):
         verification_df['Book_Value_Per_Share'] = verification_df['Book_Value_Per_Share'].round(4)
         
         # Save to CSV
-        output_path = "/Users/francispadua/r1000-ls-strategy/project/data/processed/book_value_verification.csv"
+        output_path = "../../data/processed/book_value_verification.csv"
         verification_df.to_csv(output_path, index=False)
         
         print(f"\nVerification data saved to: {output_path}")
@@ -135,21 +134,21 @@ def create_book_value_verification_csv(tickers):
         print("No detailed book value data found for any tickers.")
 
 def get_historical_book_values(ticker_symbol):
-    """
-    Extract ALL historical tangible book value per share data for a given stock.
+
+    # Extract ALL historical tangible book value per share data for a given stock.
     
-    Uses yahooquery to get:
-    - balance_sheet(): Gets historical balance sheet data (annual)
-    - TangibleBookValue: Total tangible book value (excludes intangible assets)
-    - OrdinarySharesNumber: Total shares outstanding
+    # Uses yahooquery to get:
+    # - balance_sheet(): Gets historical balance sheet data (annual)
+    # - TangibleBookValue: Total tangible book value (excludes intangible assets)
+    # - OrdinarySharesNumber: Total shares outstanding
     
-    Args:
-        ticker_symbol (str): Stock ticker symbol (e.g., 'AAPL')
+    # Args:
+    #     ticker_symbol (str): Stock ticker symbol (e.g., 'AAPL')
     
-    Returns:
-        pd.Series: Series with fiscal year-end dates as index and book value per share as values
-                  Returns None if no data available
-    """
+    # Returns:
+    #     pd.Series: Series with fiscal year-end dates as index and book value per share as values
+    #               Returns None if no data available
+
     try:
         # Create yahooquery Ticker object for the stock
         ticker = yq.Ticker(ticker_symbol)
@@ -186,19 +185,19 @@ def get_historical_book_values(ticker_symbol):
         return None
 
 def get_rolling_book_value_per_share(price_dates, book_value_series):
-    """
-    Create a rolling book value per share series that updates annually.
+
+    # Create a rolling book value per share series that updates annually.
     
-    For each date, use the most recent annual book value available at that time.
-    Example: For Jan 1, 2025, use 2024's book value per share.
+    # For each date, use the most recent annual book value available at that time.
+    # Example: For Jan 1, 2025, use 2024's book value per share.
     
-    Args:
-        price_dates (pd.DatetimeIndex): All dates from the price data
-        book_value_series (pd.Series): Historical book values with fiscal year-end dates
+    # Args:
+    #     price_dates (pd.DatetimeIndex): All dates from the price data
+    #     book_value_series (pd.Series): Historical book values with fiscal year-end dates
     
-    Returns:
-        pd.Series: Rolling book value per share for each price date
-    """
+    # Returns:
+    #     pd.Series: Rolling book value per share for each price date
+
     if book_value_series is None or len(book_value_series) == 0:
         return pd.Series(np.nan, index=price_dates)
     
@@ -227,18 +226,18 @@ def get_rolling_book_value_per_share(price_dates, book_value_series):
     return pd.Series(rolling_book_values, index=price_dates)
 
 def calculate_daily_pb_ratios(price_df):
-    """
-    Calculate daily Price-to-Book (PB) ratios for all stocks using rolling book values.
+
+    # Calculate daily Price-to-Book (PB) ratios for all stocks using rolling book values.
     
-    Formula: PB Ratio = Daily Share Price / Rolling Book Value Per Share
-    Where Rolling Book Value Per Share uses the most recent annual data available at each date.
+    # Formula: PB Ratio = Daily Share Price / Rolling Book Value Per Share
+    # Where Rolling Book Value Per Share uses the most recent annual data available at each date.
     
-    Args:
-        price_df (pd.DataFrame): DataFrame with daily prices (dates as index, tickers as columns)
+    # Args:
+    #     price_df (pd.DataFrame): DataFrame with daily prices (dates as index, tickers as columns)
     
-    Returns:
-        pd.DataFrame: DataFrame with daily PB ratios (same structure as input)
-    """
+    # Returns:
+    #     pd.DataFrame: DataFrame with daily PB ratios (same structure as input)
+
     # Create empty DataFrame to store PB ratios (same structure as price data)
     pb_ratios_df = price_df.copy()
     
@@ -275,14 +274,14 @@ def calculate_daily_pb_ratios(price_df):
     return pb_ratios_df
 
 def save_pb_ratios_to_csv(pb_ratios_df):
-    """
-    Save the calculated daily PB ratios to a CSV file, preserving the Date column.
+
+    # Save the calculated daily PB ratios to a CSV file, preserving the Date column.
     
-    Args:
-        pb_ratios_df (pd.DataFrame): DataFrame containing daily PB ratios
-    """
+    # Args:
+    #     pb_ratios_df (pd.DataFrame): DataFrame containing daily PB ratios
+
     # Define output file path
-    output_path = "/Users/francispadua/r1000-ls-strategy/project/data/processed/r1000_daily_pb_ratios.csv"
+    output_path = "../../data/processed/r1000_daily_pb_ratios.csv"
     
     # Save to CSV with date index preserved as "Date" column
     # The index_label parameter ensures the date column is named "Date"
@@ -293,20 +292,20 @@ def save_pb_ratios_to_csv(pb_ratios_df):
     print("Date column preserved in output CSV")
 
 def main():
-    """
-    Main function that orchestrates the entire rolling PB ratio calculation process.
+
+    # Main function that orchestrates the entire rolling PB ratio calculation process.
     
-    Steps:
-    1. Load daily price data from CSV
-    2. Create detailed book value verification CSV
-    3. Get ALL historical book values for each stock using yahooquery
-    4. Calculate daily PB ratios using rolling/time-varying book values that update annually
-    5. Save results to CSV file with Date column preserved
+    # Steps:
+    # 1. Load daily price data from CSV
+    # 2. Create detailed book value verification CSV
+    # 3. Get ALL historical book values for each stock using yahooquery
+    # 4. Calculate daily PB ratios using rolling/time-varying book values that update annually
+    # 5. Save results to CSV file with Date column preserved
     
-    Rolling Logic:
-    - For each date, use the most recent annual book value available at that time
-    - Example: Jan 1, 2025 uses 2024's book value; Jan 1, 2024 uses 2023's book value
-    """
+    # Rolling Logic:
+    # - For each date, use the most recent annual book value available at that time
+    # - Example: Jan 1, 2025 uses 2024's book value; Jan 1, 2024 uses 2023's book value
+
     print("=== Rolling Daily PB Ratio Calculation with Verification ===\n")
     
     # Step 1: Load the daily price data
