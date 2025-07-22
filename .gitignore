@@ -5,3 +5,5 @@ logs/
 data/processed/
 *.parquet
 venv/
+venv/
+venv/
