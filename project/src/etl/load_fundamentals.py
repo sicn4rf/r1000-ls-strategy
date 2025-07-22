@@ -43,9 +43,9 @@ daily_quality = pd.DataFrame(index=date_index)
 daily_quality['year'] = daily_quality.index.year
 daily_quality = daily_quality.merge(pivot, how='left', left_on='year', right_index=True)
 daily_quality = daily_quality.drop(columns='year')
-
+df = pd.DataFrame(daily_quality)
 # Save result
-daily_quality.to_csv('../../data/processed/quality_factor_daily.csv')
+df.to_csv('../../data/processed/quality_factor_daily.csv')
 print("Saved quality_factor_daily.csv with daily values over 10 years.")
 
 
