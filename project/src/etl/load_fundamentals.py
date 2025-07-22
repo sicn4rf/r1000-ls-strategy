@@ -27,7 +27,7 @@ quality_df['year'] = quality_df['asOfDate'].dt.year
 pivot = quality_df.pivot(index='year', columns='symbol', values='Quality')
 
 # Build complete year range from 10 years ago to now
-start_year = pd.Timestamp.today().year - 10
+start_year = pd.Timestamp.today().year - 5
 end_year = pd.Timestamp.today().year
 all_years = range(start_year, end_year + 1)
 
