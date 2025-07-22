@@ -26,10 +26,10 @@ def main():
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
-    prices = pd.read_csv(args.prices).set_index("Date")
+    prices = pd.read_csv(args.prices, index_col=0).set_index("Date")
     fwd = forward_log_returns(prices, args.horizon)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    fwd.to_csv(args.out)
+    fwd.reset_index().to_csv(args.out, index=False)
     print(f"forward returns -> {args.out}")
 
 if __name__ == "__main__":
