@@ -3,9 +3,9 @@
 
 # Example:
 # python -m compute_forward_returns \
-#     --prices data/processed/prices_cleaned.parquet \
+#     --prices data/processed/prices_cleaned.csv \
 #     --horizon 63 \
-#     --out data/processed/forward_returns.parquet
+#     --out data/processed/forward_returns.csv
 
 from pathlib import Path
 import argparse
@@ -26,10 +26,10 @@ def main():
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
-    prices = pd.read_parquet(args.prices).set_index("Date")
+    prices = pd.read_csv(args.prices).set_index("Date")
     fwd = forward_log_returns(prices, args.horizon)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    fwd.to_parquet(args.out)
+    fwd.to_csv(args.out)
     print(f"forward returns -> {args.out}")
 
 if __name__ == "__main__":
