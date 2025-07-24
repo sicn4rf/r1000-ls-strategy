@@ -39,7 +39,7 @@ df["value_z"]   = df.groupby("Date")["value"].transform(lambda x: (x - x.mean())
 df = df.rename(columns={"Date": "date", "ticker": "asset"})
 
 # Reorder columns: [date, asset, z-scored factors, price, forward return]
-df = df[["date", "asset", "quality_z", "value_z", "price", "fwd_return"]]
+df = df[["date", "asset", "value", "quality", "quality_z", "value_z", "price", "fwd_return"]]
 
 # Save to CSV
 df.to_csv("../../data/processed/factor_matrix.csv", index=False)
