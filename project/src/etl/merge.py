@@ -33,7 +33,7 @@ df["quality_z"] = df.groupby("Date")["quality"].transform(lambda x: (x - x.mean(
 df["value_z"]   = df.groupby("Date")["value"].transform(lambda x: (x - x.mean()) / x.std(ddof=0))
 
 # Drop original raw factor columns (optional)
-df = df.drop(columns=["quality", "value"])
+#df = df.drop(columns=["quality", "value"])
 
 # Rename columns to match convention
 df = df.rename(columns={"Date": "date", "ticker": "asset"})
@@ -43,7 +43,7 @@ df = df[["date", "asset", "quality_z", "value_z", "price", "fwd_return"]]
 
 # Save to CSV
 df.to_csv("../../data/processed/factor_matrix.csv", index=False)
-print("Saved to data/processed/factor_matrix.csv")
+print("Saved to data/processed/factor_matrix.csv") 
 
 
 
