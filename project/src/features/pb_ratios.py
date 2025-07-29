@@ -257,6 +257,8 @@ def calculate_daily_pb_ratios(price_df):
         
         # Store the calculated PB ratios
         pb_ratios_df[ticker] = daily_pb_ratios
+
+        pb_ratios_df[f"{ticker}_z"] = (pb_ratios_df[ticker] - pb_ratios_df[ticker].mean()) / pb_ratios_df[ticker].std()
         
         print(f"    Applied {len(historical_book_values)} different book values across time period")
     
@@ -270,7 +272,7 @@ def save_pb_ratios_to_csv(pb_ratios_df):
     #     pb_ratios_df (pd.DataFrame): DataFrame containing daily PB ratios
 
     # Define output file path
-    output_path = "../../data/processed/r1000_daily_pb_ratios.csv"
+    output_path = "../../data/processed/value_factor.csv"
     
     # Save to CSV with date index preserved as "Date" column
     # The index_label parameter ensures the date column is named "Date"
@@ -279,6 +281,33 @@ def save_pb_ratios_to_csv(pb_ratios_df):
     print(f"\nPB ratios saved to: {output_path}")
     print(f"Data shape: {pb_ratios_df.shape[0]} dates, {pb_ratios_df.shape[1]} stocks")
     print("Date column preserved in output CSV")
+
+def filter_complete_rows(input_csv, output_csv):
+    """
+    Keep only rows where all columns except 'Date' are present (no missing values).
+    """
+    import pandas as pd
+    df = pd.read_csv(input_csv)
+    # Drop rows with any missing values except in 'Date'
+    cols_to_check = [col for col in df.columns if col != 'Date']
+    df_clean = df.dropna(subset=cols_to_check)
+    df_clean.to_csv(output_csv, index=False)
+    print(f"Filtered CSV saved to {output_csv} ({len(df_clean)} rows)")
+
+def filter_zscore_complete_rows(input_csv, output_csv):
+    """
+    Save only rows with all z-score columns (ending with '_z') and Date present (no missing values).
+    """
+    import pandas as pd
+    df = pd.read_csv(input_csv)
+    # Select only Date and columns ending with '_z'
+    z_cols = [col for col in df.columns if col.endswith('_z')]
+    cols = ['Date'] + z_cols
+    df_z = df[cols]
+    # Drop rows with any missing values in z-score columns
+    df_z_clean = df_z.dropna(subset=z_cols)
+    df_z_clean.to_csv(output_csv, index=False)
+    print(f"Filtered z-score CSV saved to {output_csv} ({len(df_z_clean)} rows)")
 
 def main():
 
@@ -315,11 +344,24 @@ def main():
     # Step 5: Save results to CSV with Date column preserved
     print("\nStep 4: Saving results...")
     save_pb_ratios_to_csv(pb_ratios_df)
+    # Filter for complete rows only (no missing values except Date)
+    filter_complete_rows(
+        "../../data/processed/value_factor.csv",
+        "../../data/processed/value_factor.csv"
+    )
+    # Save only complete z-score rows to value_factor_z.csv
+    filter_zscore_complete_rows(
+        "../../data/processed/value_factor.csv",
+        "../../data/processed/value_factor_z.csv"
+    )
+
+    pb_ratios_df[['AAPL']].to_csv("../../data/processed/test_z.csv")
     
     print("\n=== Process Complete ===")
     print("Files created:")
     print("1. book_value_verification.csv - Detailed breakdown of book value calculations")
-    print("2. r1000_daily_pb_ratios.csv - Daily PB ratios using rolling book values")
+    print("2. value_factor.csv - Daily PB ratios using rolling book values")
+    print("3. value_factor_z.csv - Only rows with all z-score columns present")
 
 # Run the main function when script is executed
 if __name__ == "__main__":
