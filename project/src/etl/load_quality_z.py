@@ -35,7 +35,7 @@ daily_quality = daily_quality.merge(
 # Compute z-scores
 for ticker in tickers:
     if ticker in daily_quality.columns:
-        daily_quality[f"{ticker}_z"] = (
+        daily_quality[f"{ticker}"] = (
             daily_quality[ticker] - daily_quality[ticker].mean()
         ) / daily_quality[ticker].std()
 
@@ -43,7 +43,7 @@ for ticker in tickers:
 daily_quality.to_csv("../../data/processed/quality_factor_daily_full.csv", index=False)
 
 # Filter rows where all z-scores are present
-zscore_cols = [f"{ticker}_z" for ticker in tickers if f"{ticker}_z" in daily_quality.columns]
+zscore_cols = [f"{ticker}" for ticker in tickers if f"{ticker}" in daily_quality.columns]
 filtered = daily_quality[['Date'] + zscore_cols].dropna()
 
 # Save filtered z-score CSV
