@@ -11,7 +11,7 @@ def load_price_data():
     #     pd.DataFrame: DataFrame containing daily closing prices for all stocks
     #                  Expected format: dates as index, stock tickers as columns
 
-    price_file_path = Path(__file__).parents[2] / "data" / "processed" / "r1000_cleaned_close_prices.csv"
+    price_file_path = "/Users/francispadua/r1000-ls-strategy/project/data/processed/r1000_cleaned_close_prices.csv"
     
     # Read the CSV file - the Date column should be used as index
     # The file has structure: unnamed_index, Date, AAPL, AMZN, GOOGL, etc.
@@ -258,7 +258,7 @@ def calculate_daily_pb_ratios(price_df):
         # Store the calculated PB ratios
         pb_ratios_df[ticker] = daily_pb_ratios
 
-        pb_ratios_df[ticker] = (pb_ratios_df[ticker] - pb_ratios_df[ticker].mean()) / pb_ratios_df[ticker].std()
+        pb_ratios_df[f"{ticker}_z"] = (pb_ratios_df[ticker] - pb_ratios_df[ticker].mean()) / pb_ratios_df[ticker].std()
         
         print(f"    Applied {len(historical_book_values)} different book values across time period")
     
@@ -301,9 +301,16 @@ def filter_zscore_complete_rows(input_csv, output_csv):
     import pandas as pd
     df = pd.read_csv(input_csv)
     # Select only Date and columns ending with '_z'
-    z_cols = [col for col in df.columns if col != 'Date']
-    df_z_clean = df.dropna(subset=z_cols)
-
+    z_cols = [col for col in df.columns if col.endswith('_z')]
+    cols = ['Date'] + z_cols
+    df_z = df[cols]
+    # Drop rows with any missing values in z-score columns
+    df_z_clean = df_z.dropna(subset=z_cols)
+    
+    # Rename columns by removing '_z' suffix
+    rename_dict = {col: col[:-2] for col in z_cols}  # Remove last 2 characters ('_z')
+    df_z_clean = df_z_clean.rename(columns=rename_dict)
+    
     df_z_clean.to_csv(output_csv, index=False)
     print(f"Filtered z-score CSV saved to {output_csv} ({len(df_z_clean)} rows)")
 
@@ -331,10 +338,7 @@ def main():
     # Get list of tickers for verification
     tickers = price_df.columns.tolist()
     
-    # Step 2: Create detailed verification CSV
-    print("\nStep 2: Creating detailed book value verification data...")
-    create_book_value_verification_csv(tickers)
-    
+     
     # Step 3 & 4: Calculate rolling daily PB ratios for all stocks
     print("\nStep 3: Calculating rolling daily PB ratios...")
     pb_ratios_df = calculate_daily_pb_ratios(price_df)
@@ -353,13 +357,15 @@ def main():
         "../../data/processed/value_factor_z.csv"
     )
 
-    pb_ratios_df[['AAPL']].to_csv("../../data/processed/test_z.csv")
     
     print("\n=== Process Complete ===")
     print("Files created:")
-    print("1. book_value_verification.csv - Detailed breakdown of book value calculations")
-    print("2. value_factor.csv - Daily PB ratios using rolling book values")
-    print("3. value_factor_z.csv - Only rows with all z-score columns present")
+
+    # debugging: 
+    # print("1. book_value_verification.csv - Detailed breakdown of book value calculations")
+    
+    print("1. value_factor.csv - Daily PB ratios using rolling book values")
+    print("2. value_factor_z.csv - Only rows with all z-score columns present")
 
 # Run the main function when script is executed
 if __name__ == "__main__":
